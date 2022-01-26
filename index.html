@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UAS MATKUL GIS</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+<body>
+    <div id="map"></div>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCnjlDXASsyIUKAd1QANakIHIM8jjWWyNU"></script>
+    <!-- kodingan -->
+    <script>
+        let map;
+        const PONTIANAK_COORDINATE = {lat: -0.024408489457466827, lng: 109.3363539035037};
+
+        //menghilangkan semua marker default
+        let myStyles =[
+            {
+                featureType: "poi",
+                elementType: "labels",
+                stylers: [
+                    { visibility: "off" }
+                ]
+            }
+        ];
+        function initMap() {
+
+            map = new google.maps.Map(document.getElementById("map"), 
+                {
+                    center : PONTIANAK_COORDINATE,
+                    zoom:12,
+                    styles: myStyles
+                }
+            );
+
+            // membuat pop up
+            const infoWindow = new google.maps.InfoWindow({maxWidth: 300});
+            // load file geoJSON
+            map.data.loadGeoJson("/mapAppleStore.geojson");
+        
+
+            //merubah warna polygon & merubah icon marker
+            map.data.setStyle((feature)=>{
+                if(feature.getProperty("kecamatan")) {
+                    let color = feature.getProperty("color");
+                    return {
+                        fillColor: color,
+                        strokeColor: color,
+                        strokeWeight:2,
+                    }
+                }
+                if(feature.getProperty("desc")) {
+                    let color = "#6effd6";
+                    return {
+                        fillColor: color,
+                        strokeColor: color,
+                        strokeWeight:4,
+                    }
+                }
+                if(feature.getProperty("icon")) {
+                    return{icon: "/apple_store_ico.png"}
+                }
+            })
+            
+            // membuat event ketika marker di tekan
+            map.data.addListener('click', function(event){
+                if(event.feature.getProperty('name') != undefined){
+                    const date = new Date();
+                    const month = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+                    let namaToko = event.feature.getProperty('name');
+                    let alamatToko = event.feature.getProperty('address');
+                    let jamKerja = event.feature.getProperty('workingHour')
+                    let mediaSosial = event.feature.getProperty('socialMedia');
+                    // menambahkan custom layout untuk pop up
+                    const contentString =
+                        '<div id="content">' +
+                        '<div id="siteNotice">' +
+                        "</div>" +
+                        '<h1 id="firstHeading" class="firstHeading">'+namaToko+'</h1>' +
+                        '<div id="bodyContent">' +
+                        "<p>" +alamatToko+"</p>" +
+                        "<p>" +jamKerja+"</p>" +
+                        '<p>Media sosial <a href="'+mediaSosial+'" target="_blank">' +
+                        "Instagram</a> " +
+                        ".</p>" +
+                        "<p>Terakhir di Kunjungi ("+month[date.getMonth()]+" "+date.getDate()+", "+date.getFullYear()+")</P>"+
+                        "</div>" +
+                        "</div>";
+                    infoWindow.close();
+                    infoWindow.setContent(contentString);
+                    infoWindow.setPosition(event.latLng);
+                    infoWindow.setOptions({pixelOffset: new google.maps.Size(0,-34)})
+                    infoWindow.open(map);
+                    console.log(namaToko);
+                    }                
+            })
+        }
+        
+        google.maps.event.addDomListener(window, 'load', initMap)
+    </script>
+</body>
+</html>
